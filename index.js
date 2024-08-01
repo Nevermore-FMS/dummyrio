@@ -1,9 +1,10 @@
 const dgram = require('node:dgram');
 const net = require("net")
 
-const udpServer = dgram.createSocket('udp4');
+const udpGenericServer = dgram.createSocket('udp4')
+const udpFmsServer = dgram.createSocket('udp4')
 
-udpServer.on('message', (msg, rinfo) => {
+function onUdpMessage(msg, rinfo) {
     const sequenceNum = msg.readUInt16BE(0)
     const commVersion = msg.readUint8(2)
     const control = msg.readUint8(3)
@@ -35,10 +36,14 @@ udpServer.on('message', (msg, rinfo) => {
     reply.writeUInt16BE(0x0C00, 5)
     reply.writeUInt8(0x00, 7)
 
-    udpServer.send(reply, 1150, rinfo.address)
-})
+    udpGenericServer.send(reply, 1150, rinfo.address)
+}
 
-udpServer.bind(1110)
+udpGenericServer.on('message', onUdpMessage)
+udpFmsServer.on('message', onUdpMessage)
+
+udpGenericServer.bind(1110)
+udpFmsServer.bind(1115)
 
 const tcpServer = net.createServer()
 tcpServer.listen(1740)
